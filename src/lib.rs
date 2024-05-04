@@ -15,6 +15,7 @@ pub fn cache_dir() -> PathBuf {
         .to_owned()
 }
 
+/// Digest (hash value) of a benchmark instance
 pub struct Digest(String);
 
 impl Digest {
@@ -23,6 +24,10 @@ impl Digest {
     }
 }
 
+/// Get a list of all instances
+///
+/// This is not cached locally, and will download the list from the server every time
+/// since the list should be updated frequently.
 pub fn all_instances() -> Result<Vec<Digest>> {
     todo!()
 }
