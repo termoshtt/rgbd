@@ -4,7 +4,7 @@
 //!
 
 use anyhow::{Context, Result};
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 use url::Url;
 
 const BASE_URL: &str = "https://benchmark-database.de/";
@@ -37,15 +37,41 @@ impl Digest {
 }
 
 /// Get a list of instances for a given track
-pub fn get_track(track: &str) -> Result<Vec<Digest>> {
-    let response = ureq::get(BASE_URL)
-        .query("track", track)
-        .query("context", "cnf")
-        .call()?;
+pub fn get_track(track: &str, always_retrieve: bool) -> Result<Vec<Digest>> {
+    let cache = cache_dir().join("tracks").join(track);
+    let response = if !always_retrieve && cache.exists() {
+        fs::read_to_string(&cache)?
+    } else {
+        let req = ureq::get(&format!("{BASE_URL}/getinstances"))
+            .query("query", &format!("track={}", track))
+            .query("context", "cnf");
+        log::info!("GET {}", req.url());
+        let response = req.call()?.into_string()?;
+        fs::create_dir_all(cache.parent().unwrap())?;
+        fs::write(&cache, &response)?;
+        response
+    };
     let urls = response
-        .into_string()?
         .lines()
-        .map(|line| Url::parse(line))
-        .collect::<Result<Vec<Url>, _>>()?;
+        .map(|line| {
+            Url::parse(line).with_context(|| format!("Track contains invalid URL: {}", line))
+        })
+        .collect::<Result<Vec<Url>>>()?;
     urls.into_iter().map(|url| Digest::from_url(&url)).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_track_main_2023() {
+        let track = "main_2023";
+        let instances = get_track(track, true).unwrap();
+        assert_eq!(instances.len(), 400);
+
+        // Test cache
+        let instances = get_track(track, false).unwrap();
+        assert_eq!(instances.len(), 400);
+    }
 }
