@@ -44,7 +44,7 @@ impl Digest {
         if cache.exists() {
             Ok(fs::read(&cache)?)
         } else {
-            let req = ureq::get(&self.as_file_url().to_string());
+            let req = ureq::get(self.as_file_url().as_ref());
             log::info!("GET {}", req.url());
             let mut response = req.call()?.into_reader();
             let mut buf = Vec::new();
