@@ -3,9 +3,11 @@
 //! This crate downloads instance lists and actual benchmark instances from <https://benchmark-database.de/> on-demand, and caches them locally.
 //!
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::path::PathBuf;
 use url::Url;
+
+const BASE_URL: &str = "https://benchmark-database.de/";
 
 /// The root directory where the database is cached
 pub fn cache_dir() -> PathBuf {
@@ -20,19 +22,30 @@ pub struct Digest(String);
 
 impl Digest {
     pub fn as_file_url(&self) -> Url {
-        Url::parse(&format!("https://benchmark-database.de/file/{}", self.0)).unwrap()
+        Url::parse(&format!("{BASE_URL}/file/{}", self.0)).unwrap()
     }
-}
 
-/// Get a list of all instances
-///
-/// This is not cached locally, and will download the list from the server every time
-/// since the list should be updated frequently.
-pub fn all_instances() -> Result<Vec<Digest>> {
-    todo!()
+    pub fn from_url(url: &Url) -> Result<Self> {
+        let digest = url
+            .path_segments()
+            .context("URL is cannot be a base")?
+            .last()
+            .context("URL does not have path")?
+            .to_string();
+        Ok(Self(digest))
+    }
 }
 
 /// Get a list of instances for a given track
 pub fn get_track(track: &str) -> Result<Vec<Digest>> {
-    todo!()
+    let response = ureq::get(BASE_URL)
+        .query("track", track)
+        .query("context", "cnf")
+        .call()?;
+    let urls = response
+        .into_string()?
+        .lines()
+        .map(|line| Url::parse(line))
+        .collect::<Result<Vec<Url>, _>>()?;
+    urls.into_iter().map(|url| Digest::from_url(&url)).collect()
 }
