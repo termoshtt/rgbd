@@ -1,5 +1,25 @@
 use anyhow::{bail, Context, Result};
 
+/// CNF (Conjunctive Normal Form) representation
+///
+/// ```rust
+/// use rgbd::CNF;
+///
+/// let cnf = CNF::from_dimacs_format(r#"
+/// p cnf 5 3
+/// 1 -5 4 0
+/// -1 5 3 4 0
+/// -3 -4 0
+/// "#).unwrap();
+///
+/// assert_eq!(cnf.num_variables, 5);
+/// assert_eq!(cnf.num_clauses, 3);
+/// assert_eq!(cnf.clauses, vec![
+///   vec![1, -5, 4],
+///   vec![-1, 5, 3, 4],
+///   vec![-3, -4],
+/// ]);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CNF {
     pub num_variables: usize,
@@ -31,7 +51,11 @@ impl CNF {
 
         let clauses = lines
             .map(|line| {
+                if line.last() != Some(&"0") {
+                    bail!("Missing terminator 0: {}", line.join(" "));
+                }
                 line.iter()
+                    .take(line.len() - 1)
                     .map(|&s| Ok(s.parse()?))
                     .collect::<Result<Vec<_>>>()
             })
