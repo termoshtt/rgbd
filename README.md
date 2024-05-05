@@ -1,7 +1,6 @@
 rgbd
 =====
-
-Unofficial Rust client for [GBD Benchmark Database](https://github.com/Udopia/gbd)
+Unofficial Rust client for [GBD Benchmark Database](https://github.com/Udopia/gbd), [A Problem Meta-Data Library for Research in SAT](https://easychair.org/publications/paper/jQXv)
 
 License
 --------
