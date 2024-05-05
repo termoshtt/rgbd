@@ -39,7 +39,7 @@ impl Digest {
         Ok(Self(digest))
     }
 
-    pub fn read(&self) -> Result<Vec<u8>> {
+    fn read_bytes(&self) -> Result<Vec<u8>> {
         let cache = cache_dir().join("file").join(&self.0);
         if cache.exists() {
             Ok(fs::read(&cache)?)
@@ -53,6 +53,12 @@ impl Digest {
             fs::write(&cache, &buf)?;
             Ok(buf)
         }
+    }
+
+    pub fn read(&self) -> Result<CNF> {
+        let bytes = self.read_bytes()?;
+        let decoder = xz2::read::XzDecoder::new(&bytes[..]);
+        CNF::from_dimacs_format(decoder).context("Failed to parse CNF")
     }
 }
 
@@ -93,5 +99,13 @@ mod tests {
         // Test cache
         let instances = get_track(track, false).unwrap();
         assert_eq!(instances.len(), 400);
+    }
+
+    #[test]
+    fn read_digest() {
+        let instances = get_track("main_2023", false).unwrap();
+        let cnf = instances[14].read().unwrap();
+        assert_eq!(cnf.num_variables, 45);
+        assert_eq!(cnf.num_clauses, 376);
     }
 }

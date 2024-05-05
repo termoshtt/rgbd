@@ -1,11 +1,12 @@
 use anyhow::{bail, Context, Result};
+use std::io::{self, BufRead};
 
 /// CNF (Conjunctive Normal Form) representation
 ///
 /// ```rust
 /// use rgbd::CNF;
 ///
-/// let cnf = CNF::from_dimacs_format(r#"
+/// let cnf = CNF::from_dimacs_format_str(r#"
 /// p cnf 5 3
 /// 1 -5 4 0
 /// -1 5 3 4 0
@@ -28,8 +29,14 @@ pub struct CNF {
 }
 
 impl CNF {
-    pub fn from_dimacs_format(input: &str) -> Result<Self> {
+    pub fn from_dimacs_format_str(input: &str) -> Result<Self> {
+        Self::from_dimacs_format(input.as_bytes())
+    }
+
+    pub fn from_dimacs_format(input: impl io::Read) -> Result<Self> {
+        let input = io::BufReader::new(input);
         let mut lines = input.lines().filter_map(|line| {
+            let line = line.ok()?;
             let line = line.trim();
             if line.is_empty() {
                 // Emtpy line is ignored
@@ -39,7 +46,7 @@ impl CNF {
                 // Comment
                 return None;
             }
-            Some(line.split(' ').collect::<Vec<&str>>())
+            Some(line.split(' ').map(str::to_string).collect::<Vec<String>>())
         });
         let header = lines.next().context("Missing header")?;
         if header.len() != 4 || header[0].to_lowercase() != "p" || header[1].to_lowercase() != "cnf"
@@ -51,12 +58,14 @@ impl CNF {
 
         let clauses = lines
             .map(|line| {
-                if line.last() != Some(&"0") {
-                    bail!("Missing terminator 0: {}", line.join(" "));
+                if let Some(last) = line.last() {
+                    if last != "0" {
+                        bail!("Missing terminator 0: {}", line.join(" "));
+                    }
                 }
                 line.iter()
                     .take(line.len() - 1)
-                    .map(|&s| Ok(s.parse()?))
+                    .map(|s| Ok(s.parse()?))
                     .collect::<Result<Vec<_>>>()
             })
             .collect::<Result<Vec<_>>>()?;
