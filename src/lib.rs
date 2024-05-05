@@ -3,6 +3,10 @@
 //! This crate downloads instance lists and actual benchmark instances from <https://benchmark-database.de/> on-demand, and caches them locally.
 //!
 
+mod parse;
+
+pub use parse::*;
+
 use anyhow::{Context, Result};
 use std::{fs, path::PathBuf};
 use url::Url;
@@ -33,6 +37,22 @@ impl Digest {
             .context("URL does not have path")?
             .to_string();
         Ok(Self(digest))
+    }
+
+    pub fn read(&self) -> Result<Vec<u8>> {
+        let cache = cache_dir().join("file").join(&self.0);
+        if cache.exists() {
+            Ok(fs::read(&cache)?)
+        } else {
+            let req = ureq::get(&self.as_file_url().to_string());
+            log::info!("GET {}", req.url());
+            let mut response = req.call()?.into_reader();
+            let mut buf = Vec::new();
+            response.read_to_end(&mut buf)?;
+            fs::create_dir_all(cache.parent().unwrap())?;
+            fs::write(&cache, &buf)?;
+            Ok(buf)
+        }
     }
 }
 
