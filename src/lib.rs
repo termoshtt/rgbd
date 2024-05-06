@@ -20,26 +20,21 @@
 //! ```
 
 pub mod base;
+pub mod meta;
 
+mod cache;
 mod digest;
 mod parse;
 
+pub use cache::*;
 pub use digest::*;
 pub use parse::*;
 
 use anyhow::{Context, Result};
-use std::{fs, path::PathBuf};
+use std::fs;
 use url::Url;
 
 const BASE_URL: &str = "https://benchmark-database.de";
-
-/// The root directory where the database is cached
-pub fn cache_dir() -> PathBuf {
-    directories::ProjectDirs::from("", "", "rgbd")
-        .unwrap()
-        .cache_dir()
-        .to_owned()
-}
 
 /// Get a list of instances for a given track
 pub fn get_track(track: &str) -> Result<Vec<Digest>> {

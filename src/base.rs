@@ -66,25 +66,9 @@
 //! )
 //! ```
 
-use crate::{cache_dir, BASE_URL};
+use crate::get_db;
 use anyhow::Result;
-use std::{collections::BTreeMap, fs, io, path::PathBuf};
-
-/// Get the path where the "base" database is cached
-///
-/// If the database does not exist, it will be downloaded from the server.
-pub fn get_db() -> Result<PathBuf> {
-    let db = cache_dir().join("db").join("base.db");
-    if !db.exists() {
-        fs::create_dir_all(db.parent().unwrap())?;
-        let req = ureq::get(format!("{BASE_URL}/getdatabase/base").as_str());
-        log::info!("GET {}", req.url());
-        let response = req.call()?;
-        let mut f = fs::File::create(&db)?;
-        io::copy(&mut response.into_reader(), &mut f)?;
-    }
-    Ok(db)
-}
+use std::collections::BTreeMap;
 
 /// Sizes of instance
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -98,7 +82,7 @@ pub struct Size {
 ///
 /// Some instances does not have size information, in that case, the value is `None`.
 pub fn get_sizes() -> Result<BTreeMap<String, Option<Size>>> {
-    let path = get_db()?;
+    let path = get_db("base")?;
     let conn = rusqlite::Connection::open(path)?;
 
     let mut stmt = conn.prepare("SELECT hash, variables, clauses, bytes FROM features")?;
