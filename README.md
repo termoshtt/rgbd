@@ -1,5 +1,7 @@
 rgbd
 =====
+[![Static Badge](https://img.shields.io/badge/document-main-blue)](https://termoshtt.github.io/rgbd/rgbd/index.html)
+
 Unofficial Rust client for [GBD Benchmark Database](https://github.com/Udopia/gbd), [A Problem Meta-Data Library for Research in SAT](https://easychair.org/publications/paper/jQXv)
 
 License
