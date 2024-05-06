@@ -5,12 +5,15 @@
 //! Examples
 //! ---------
 //!
-//! Get a benchmark instance of main track of SAT Competition 2023
+//! Get instances of the main track in [SAT Competition 2023](https://satcompetition.github.io/2023/)
 //!
 //! ```rust
 //! use rgbd::get_track;
 //!
-//! let instances = get_track("main_2023", false).unwrap();
+//! let instances = get_track("main_2023").unwrap();
+//! assert_eq!(instances.len(), 400);
+//!
+//! // Take some small instance
 //! let cnf = instances[14].read().unwrap();
 //! assert_eq!(cnf.num_variables, 45);
 //! assert_eq!(cnf.num_clauses, 376);
@@ -37,9 +40,9 @@ pub fn cache_dir() -> PathBuf {
 }
 
 /// Get a list of instances for a given track
-pub fn get_track(track: &str, always_retrieve: bool) -> Result<Vec<Digest>> {
+pub fn get_track(track: &str) -> Result<Vec<Digest>> {
     let cache = cache_dir().join("tracks").join(track);
-    let response = if !always_retrieve && cache.exists() {
+    let response = if cache.exists() {
         fs::read_to_string(&cache)?
     } else {
         let req = ureq::get(&format!("{BASE_URL}/getinstances"))
@@ -58,28 +61,4 @@ pub fn get_track(track: &str, always_retrieve: bool) -> Result<Vec<Digest>> {
         })
         .collect::<Result<Vec<Url>>>()?;
     urls.into_iter().map(|url| Digest::from_url(&url)).collect()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_get_track_main_2023() {
-        let track = "main_2023";
-        let instances = get_track(track, true).unwrap();
-        assert_eq!(instances.len(), 400);
-
-        // Test cache
-        let instances = get_track(track, false).unwrap();
-        assert_eq!(instances.len(), 400);
-    }
-
-    #[test]
-    fn read_digest() {
-        let instances = get_track("main_2023", false).unwrap();
-        let cnf = instances[14].read().unwrap();
-        assert_eq!(cnf.num_variables, 45);
-        assert_eq!(cnf.num_clauses, 376);
-    }
 }
