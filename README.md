@@ -1,6 +1,8 @@
 rgbd
 =====
-[![Static Badge](https://img.shields.io/badge/document-main-blue)](https://termoshtt.github.io/rgbd/rgbd/index.html)
+[![crate](https://img.shields.io/crates/v/rgbd.svg)](https://crates.io/crates/rgbd) 
+[![docs.rs](https://docs.rs/rgbd/badge.svg)](https://docs.rs/rgbd)
+[![master](https://img.shields.io/badge/docs-master-blue)](https://termoshtt.github.io/rgbd/rgbd/index.html)
 
 Unofficial Rust client for [GBD Benchmark Database](https://github.com/Udopia/gbd), [A Problem Meta-Data Library for Research in SAT](https://easychair.org/publications/paper/jQXv)
 
