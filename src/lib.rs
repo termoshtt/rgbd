@@ -19,6 +19,8 @@
 //! assert_eq!(cnf.num_clauses, 376);
 //! ```
 
+pub mod base;
+
 mod digest;
 mod parse;
 
