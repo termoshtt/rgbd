@@ -19,43 +19,15 @@
 //! assert_eq!(cnf.num_clauses, 376);
 //! ```
 
-pub mod base;
-pub mod meta;
-
+mod base;
 mod cache;
 mod digest;
+mod meta;
 mod parse;
 
-pub use cache::*;
+pub use base::*;
 pub use digest::*;
+pub use meta::*;
 pub use parse::*;
 
-use anyhow::{Context, Result};
-use std::fs;
-use url::Url;
-
 const BASE_URL: &str = "https://benchmark-database.de";
-
-/// Get a list of instances for a given track
-pub fn get_track(track: &str) -> Result<Vec<Digest>> {
-    let cache = cache_dir().join("tracks").join(track);
-    let response = if cache.exists() {
-        fs::read_to_string(&cache)?
-    } else {
-        let req = ureq::get(&format!("{BASE_URL}/getinstances"))
-            .query("query", &format!("track={}", track))
-            .query("context", "cnf");
-        log::info!("GET {}", req.url());
-        let response = req.call()?.into_string()?;
-        fs::create_dir_all(cache.parent().unwrap())?;
-        fs::write(&cache, &response)?;
-        response
-    };
-    let urls = response
-        .lines()
-        .map(|line| {
-            Url::parse(line).with_context(|| format!("Track contains invalid URL: {}", line))
-        })
-        .collect::<Result<Vec<Url>>>()?;
-    urls.into_iter().map(|url| Digest::from_url(&url)).collect()
-}

@@ -66,7 +66,7 @@
 //! )
 //! ```
 
-use crate::get_db;
+use crate::cache::get_db;
 use anyhow::Result;
 use std::collections::BTreeMap;
 

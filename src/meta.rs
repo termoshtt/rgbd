@@ -17,9 +17,13 @@
 //! )
 //! ```
 
-use crate::get_db;
-use anyhow::Result;
-use std::collections::BTreeMap;
+use crate::{
+    cache::{cache_dir, get_db},
+    Digest, BASE_URL,
+};
+use anyhow::{Context, Result};
+use std::{collections::BTreeMap, fs};
+use url::Url;
 
 /// Whether the instance is satisfiable or not
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -47,6 +51,30 @@ pub fn get_results() -> Result<BTreeMap<String, SatResult>> {
         out.insert(hash, result);
     }
     Ok(out)
+}
+
+/// Get a list of instances for a given track
+pub fn get_track(track: &str) -> Result<Vec<Digest>> {
+    let cache = cache_dir().join("tracks").join(track);
+    let response = if cache.exists() {
+        fs::read_to_string(&cache)?
+    } else {
+        let req = ureq::get(&format!("{BASE_URL}/getinstances"))
+            .query("query", &format!("track={}", track))
+            .query("context", "cnf");
+        log::info!("GET {}", req.url());
+        let response = req.call()?.into_string()?;
+        fs::create_dir_all(cache.parent().unwrap())?;
+        fs::write(&cache, &response)?;
+        response
+    };
+    let urls = response
+        .lines()
+        .map(|line| {
+            Url::parse(line).with_context(|| format!("Track contains invalid URL: {}", line))
+        })
+        .collect::<Result<Vec<Url>>>()?;
+    urls.into_iter().map(|url| Digest::from_url(&url)).collect()
 }
 
 #[cfg(test)]

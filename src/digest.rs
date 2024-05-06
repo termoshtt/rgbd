@@ -1,4 +1,4 @@
-use crate::{cache_dir, BASE_URL, CNF};
+use crate::{cache::cache_dir, BASE_URL, CNF};
 use anyhow::{Context, Result};
 use std::fs;
 use url::Url;
