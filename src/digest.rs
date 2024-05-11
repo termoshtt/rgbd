@@ -1,6 +1,6 @@
 use crate::{cache::cache_dir, BASE_URL, CNF};
 use anyhow::{Context, Result};
-use std::fs;
+use std::{fs, ops::Deref};
 use url::Url;
 
 /// Digest (hash value) of a benchmark instance
@@ -22,6 +22,13 @@ use url::Url;
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Digest(String);
+
+impl Deref for Digest {
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl Digest {
     pub fn new(digest: String) -> Self {
